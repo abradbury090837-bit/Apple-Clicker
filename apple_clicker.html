@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Apple Clicker</title>
+<link rel="icon" href="https://image2url.com/r2/bucket1/images/1766552725501-c6100fa7-be1e-43d0-b20f-badd2e3e6e26.png">
+<style>
+html, body {height:100%; margin:0; font-family:Arial; background:#8B0000; color:white; overflow:hidden;}
+body {display:flex; justify-content:center; align-items:center; position:relative; height:100vh;}
+
+/* Game */
+#game-container {text-align:center; position:relative;}
+#counter {font-size:80px; margin-bottom:20px; font-family:"Times New Roman", serif; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);}
+#apple {width:250px; cursor:pointer; border-radius:50%; filter: drop-shadow(0 0 30px #fff700) drop-shadow(0 0 50px #fffa00); position:relative; transition:transform 0.1s ease; z-index:5;}
+#apple:active {transform:scale(0.95);}
+
+/* Floating emojis and numbers */
+.flying-emoji {position:absolute; font-size:28px; pointer-events:none; animation:flyUp 1s ease forwards; z-index:10;}
+.flying-number {position:absolute; font-size:24px; font-weight:bold; color:#FFD700; pointer-events:none; animation:flyUp 1s ease forwards; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); z-index:10;}
+.small-apple {position:absolute; font-size:18px; pointer-events:none; animation:flyUp 1.5s ease forwards; opacity:0.8; z-index:10;}
+@keyframes flyUp {0% {opacity:1; transform:translateY(0) scale(1) rotate(0deg);} 100% {opacity:0; transform:translateY(-120px) scale(1.2) rotate(15deg);}}
+</style>
+</head>
+<body>
+<audio id="click-sound" src="https://www.soundjay.com/button/sounds/button-16.mp3"></audio>
+
+<div id="game-container">
+    <div id="counter">0</div>
+    <img id="apple" src="https://image2url.com/r2/bucket1/images/1766552725501-c6100fa7-be1e-43d0-b20f-badd2e3e6e26.png">
+</div>
+
+<script>
+// ----- Game State -----
+let gameState = {
+    apples: 0,
+    applesPerClick: 1,
+    totalClicks: 0
+};
+
+// ----- DOM Elements -----
+const apple = document.getElementById("apple");
+const counter = document.getElementById("counter");
+const clickSound = document.getElementById("click-sound");
+
+// ----- Visual Effects -----
+function spawnEmoji(x, y) {
+    const emoji = document.createElement('div');
+    emoji.className = 'flying-emoji';
+    emoji.innerText = '🍎';
+    emoji.style.left = x + 'px';
+    emoji.style.top = y + 'px';
+    document.body.appendChild(emoji);
+    setTimeout(() => emoji.remove(), 1000);
+}
+
+function spawnSmallApple(x, y) {
+    const appleDiv = document.createElement('div');
+    appleDiv.className = 'small-apple';
+    appleDiv.innerText = '🍎';
+    appleDiv.style.left = (x + Math.random() * 40 - 20) + 'px';
+    appleDiv.style.top = (y + Math.random() * 40 - 20) + 'px';
+    document.body.appendChild(appleDiv);
+    setTimeout(() => appleDiv.remove(), 1500);
+}
+
+function spawnNumber(x, y, value) {
+    const number = document.createElement('div');
+    number.className = 'flying-number';
+    number.innerText = '+' + value;
+    number.style.left = x + 'px';
+    number.style.top = y + 'px';
+    document.body.appendChild(number);
+    setTimeout(() => number.remove(), 1000);
+}
+
+// ----- Game Logic -----
+function updateDisplay() {
+    counter.textContent = Math.floor(gameState.apples);
+}
+
+// ----- Apple Clicking -----
+apple.onclick = (e) => {
+    const clickValue = gameState.applesPerClick;
+    gameState.apples += clickValue;
+    gameState.totalClicks++;
+
+    clickSound.currentTime = 0;
+    clickSound.volume = 0.5;
+    clickSound.play().catch(() => {});
+
+    spawnEmoji(e.clientX, e.clientY);
+    for (let i = 0; i < 3; i++) {
+        setTimeout(() => spawnSmallApple(e.clientX, e.clientY), i * 100);
+    }
+    spawnNumber(e.clientX, e.clientY - 20, clickValue);
+    updateDisplay();
+    saveGame();
+};
+
+// ----- Save/Load System -----
+function saveGame() {
+    localStorage.setItem('appleClickerSave', JSON.stringify(gameState));
+}
+
+function loadGame() {
+    const saved = localStorage.getItem('appleClickerSave');
+    if (saved) {
+        Object.assign(gameState, JSON.parse(saved));
+        updateDisplay();
+    }
+}
+
+function resetGame() {
+    if (confirm('Reset all progress?')) {
+        localStorage.removeItem('appleClickerSave');
+        location.reload();
+    }
+}
+
+// Secret reset (press 'R' key)
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'r' || e.key === 'R') {
+        resetGame();
+    }
+});
+
+// ----- Auto-save -----
+setInterval(saveGame, 5000);
+
+// ----- Initialize -----
+loadGame();
+updateDisplay();
+</script>
+</body>
+</html>
